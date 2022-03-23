@@ -13,6 +13,7 @@ renv::install("crayon")
 renv::install("bedr")
 renv::install("UpSetR")
 renv::install("svglite")
+renv::install("optparse")
 
 renv::install("bioc::GenomicRanges")
 renv::install("bioc::rtracklayer")
