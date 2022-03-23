@@ -1,28 +1,6 @@
-library(optparse)
-
-option_list <- list(
-  make_option(c("-t", "--tad"),
-              type = "character", default = NULL,
-              help = "The TAD files.", metavar = "character"
-  ),
-  make_option(c("-c", "--cluster"),
-              type = "character", default = NULL,
-              help = "The cluster folder", metavar = "character"
-  ),
-  make_option(c("-o", "--output"),
-              type = "character", default = NULL,
-              help = "The outputfile", metavar = "character"
-  ),
-  make_option(c("-n", "--workers"),
-              type = "character", default = NULL,
-              help = "The number of workers", metavar = "integer"
-  )
-)
-
-#-----------------------------------------
 library(GenomicRanges)
 library(tidyverse)
-library(parallel)
+library(furrr)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -36,22 +14,23 @@ data_tbl_load_fn<-function(file){
   rm(tmp_obj)
   return(out_tbl)
 }
+
+
 #-----------------------------------------
-opt_parser <- OptionParser(option_list = option_list)
-opt <- parse_args(opt_parser)
-
-TAD_file<-opt$tad
-BHiCect_res_folder<-opt$cluster
-nworker<-opt$workers
-out_file<-opt$output
-
+TAD_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/GSE63525_HMEC_Arrowhead_domainlist.txt"
+BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
+out_file<-"~/data_transfer/HMEC_TAD_cl_intersect.Rda"
+#-----------------------------------------
 TAD_tbl<-read_delim(TAD_file,delim = "\t",col_names = T) %>% 
   mutate(chr=paste0("chr",chr1)) %>% 
   dplyr::select(chr,x1,x2) %>% 
   dplyr::rename(start=x1,end=x2)
-
+nworker<-15
 chr_set<-str_split_fixed(grep("^chr",list.files(BHiCect_res_folder),value=T),pattern = "_",n=2)[,1]
-TAD_cl_inter_summary_l<-map(chr_set,function(chromo){
+
+TAD_cl_inter_summary_l<-vector('list',length(chr_set))
+names(TAD_cl_inter_summary_l)<-chr_set
+for(chromo in chr_set){
   message(chromo)
   
   tmp_spec_res<-data_tbl_load_fn(paste0(BHiCect_res_folder,chromo,"_spec_res.Rda"))
@@ -122,7 +101,7 @@ TAD_cl_inter_summary_l<-map(chr_set,function(chromo){
   
   cl_GRange_l<-GRangesList(cl_tbl$GRange)
   names(cl_GRange_l)<-cl_tbl$cl
-
+  
   message(chromo,": TAD-BHiCect intersection")
   
   chr_TAD_tbl<-chr_TAD_tbl %>% 
@@ -161,9 +140,10 @@ TAD_cl_inter_summary_l<-map(chr_set,function(chromo){
       inter.cl[which.max(inter.stat)]
     }))
   
-  return(chr_TAD_tbl)
+  TAD_cl_inter_summary_l[[chromo]]<-chr_TAD_tbl
   
-})
+}
+
 TAD_cl_inter_summary_tbl<-do.call(bind_rows,TAD_cl_inter_summary_l)
 
 save(TAD_cl_inter_summary_tbl,file = out_file)
