@@ -17,9 +17,9 @@ data_tbl_load_fn<-function(file){
 
 
 #-----------------------------------------
-TAD_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/GSE63525_HMEC_Arrowhead_domainlist.txt"
-BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
-out_file<-"~/data_transfer/HMEC_TAD_cl_intersect.Rda"
+TAD_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/GSE63525_GM12878_primary+replicate_Arrowhead_domainlist.txt"
+BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
+out_file<-"~/data_transfer/GM12878_TAD_cl_intersect.Rda"
 #-----------------------------------------
 TAD_tbl<-read_delim(TAD_file,delim = "\t",col_names = T) %>% 
   mutate(chr=paste0("chr",chr1)) %>% 
