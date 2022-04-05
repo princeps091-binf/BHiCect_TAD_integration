@@ -12,8 +12,8 @@ get_tbl_in_fn<-function(tmp_file){
   return(out_tbl)
 }
 #--------------------------------
-inter_file<-"./data/intersection_out_tbl/HMEC_TAD_cl_intersect.Rda"
-TAD_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/pval_tbl/CAGE_union_HMEC_TAD_pval_tbl.Rda"
+inter_file<-"./data/intersection_out_tbl/GM12878_TAD_cl_intersect.Rda"
+TAD_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/pval_tbl/CAGE_union_GM12878_TAD_pval_tbl.Rda"
 
 TAD_tbl<-get_tbl_in_fn(TAD_file)%>% 
   group_by(chr) %>% 
@@ -42,9 +42,11 @@ max_cl_GRange_l<-GRangesList(TAD_cl_inter_tbl$max.GRange)
 TAD_Grange_l<-GRangesList(TAD_cl_inter_tbl$GRange)
 tad_cover<-unlist(lapply(width(IRanges::intersect(TAD_Grange_l,max_cl_GRange_l)),sum))/(as.numeric(width(TAD_Grange_l)))
 cl_cover<-unlist(lapply(width(IRanges::intersect(TAD_Grange_l,max_cl_GRange_l)),sum))/as.numeric(unlist(lapply(width(max_cl_GRange_l),sum)))
+
 tibble(tad=tad_cover,cl=cl_cover) %>% 
   ggplot(.,aes(tad,cl))+
-  geom_density_2d_filled()
+  geom_density_2d_filled(show.legend = F)
+ggsave("~/Documents/multires_bhicect/weeklies/weekly55/img/GM12878_TAD_cl_intersect.png")
 
 TAD_cl_inter_tbl %>% 
   mutate(ID=paste(chr,start,end,sep="_")) %>% 
