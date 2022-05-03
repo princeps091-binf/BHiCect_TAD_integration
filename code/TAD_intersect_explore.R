@@ -14,6 +14,9 @@ get_tbl_in_fn<-function(tmp_file){
 #--------------------------------
 inter_file<-"./data/intersection_out_tbl/GM12878_TAD_cl_intersect.Rda"
 TAD_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/pval_tbl/CAGE_union_GM12878_TAD_pval_tbl.Rda"
+top_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/trans_res/GM12878_union_top_trans_res_dagger_tbl.Rda"
+
+hub_tbl<-get_tbl_in_fn(top_hub_file)
 
 TAD_tbl<-get_tbl_in_fn(TAD_file)%>% 
   group_by(chr) %>% 
@@ -53,4 +56,23 @@ TAD_cl_inter_tbl %>%
   mutate(tad.cover=tad_cover,cl.cover=cl_cover) %>% 
   mutate(cage.rich=ifelse(ID %in% TAD_tbl$ID,"rich",'other')) %>% 
   ggplot(.,aes(cl.cover,color=cage.rich))+
+  geom_density()
+  
+
+TAD_cl_inter_tbl %>% 
+  dplyr::select(chr,start,end,inter.cl,inter.stat) %>% 
+  mutate(ID=1:n()) %>% 
+  unnest(cols=c(inter.cl,inter.stat)) %>% 
+  left_join(.,hub_tbl %>% 
+              dplyr::select(chr,node) %>% 
+              dplyr::rename(inter.cl=node) %>% 
+              mutate(io="hub")) %>% 
+  mutate(io=ifelse(is.na(io),"out",io)) %>% 
+  group_by(ID) %>% 
+  summarise(n=sum(io == "hub")) %>% 
+  filter(n>0)
+  
+
+tmp_tad_stat.tbl %>% 
+  ggplot(.,aes(inter.stat,color=io))+
   geom_density()
