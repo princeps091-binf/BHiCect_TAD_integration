@@ -67,6 +67,18 @@ top_TAD_tbl<-tibble(chr=as.character(unlist(lapply(top_TAD_GRange,function(x)as.
        start=map_int(top_TAD_GRange,start),
        end=map_int(top_TAD_GRange,end),
        GRange=top_TAD_GRange)
+top_TAD_tbl %>% 
+  left_join(.,TAD_tbl %>% 
+              dplyr::select(chr,start,end,feature_n,emp.pval) %>% 
+              mutate(start=as.numeric(start),
+                     end=as.numeric(end)-1)) %>% 
+  filter((is.na(emp.pval)))
+# We notice that top TAD without equivalent in the original TAD-set (NA emp.pval when joined) 
+# correspond to the union of intersecting TADs
+## Example of such top-TAD aggregating intersecting TADs
+top_TAD_tbl %>% 
+  mutate(ID=1:n()) %>% 
+  filter(start==112345000 & chr=="chr1")
 
 hub_chr_set<-unique(hub_tbl$chr)
 
