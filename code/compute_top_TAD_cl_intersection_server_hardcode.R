@@ -17,9 +17,9 @@ data_tbl_load_fn<-function(file){
 
 
 #-----------------------------------------
-TAD_file<-"~/data_transfer/candidate_trans_DAGGER_hub/TAD_tbl/GM12878_top_TAD_tbl.Rda"
-BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
-out_file<-"~/data_transfer/GM12878_top_TAD_cl_intersect.Rda"
+TAD_file<-"~/data_transfer/candidate_trans_DAGGER_hub/TAD_tbl/HMEC_top_TAD_tbl.Rda"
+BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
+out_file<-"~/data_transfer/HMEC_top_TAD_cl_intersect.Rda"
 #-----------------------------------------
 nworker<-15
 

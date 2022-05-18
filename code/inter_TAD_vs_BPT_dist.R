@@ -3,7 +3,14 @@ library(GenomicRanges)
 library(furrr)
 library(data.tree)
 library(igraph)
+library(vroom)
+library(mgcv)
 #--------------------------------
+options(scipen = 999999999)
+res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
+res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
+names(res_num)<-res_set
+#-----------------------------------------
 ##Utils. Fn
 
 get_tbl_in_fn<-function(tmp_file){
@@ -14,8 +21,22 @@ get_tbl_in_fn<-function(tmp_file){
   return(out_tbl)
 }
 
+hic_dat_in<-function(dat_file,cl_res,chromo){
+  chr_dat<-vroom(paste0(dat_file,cl_res,"/",chromo,".txt"),delim = "\t",col_names = F,trim_ws = T,escape_double = F)
+  return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.na(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
+}
+
+compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,res_num){
+  chr_dat<-hic_dat_in(dat_file,cl_res,chromo) 
+  hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat,cluster = 10)
+  pred_vec<-predict(hic_gam,newdata = chr_dat)
+  #Compute zscore and predicted HiC magnitude
+  chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
+  return(chr_dat %>% mutate(res=cl_res,chr=chromo))
+}  
+
 #--------------------------------
-inter_file<-"./data/intersection_out_tbl/GM12878_TAD_cl_intersect.Rda"
+inter_file<-"./data/intersection_out_tbl/GM12878_top_TAD_cl_intersect.Rda"
 res_file<-"~/Documents/multires_bhicect/data/GM12878/spec_res/chr1_spec_res.Rda"
 #HiC_dat_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/"
 HiC_dat_folder<-"~/Documents/multires_bhicect/data/GM12878/"
@@ -26,7 +47,7 @@ TAD_best_cl_fit_tbl<-TAD_cl_inter_tbl %>%
   dplyr::select(chr,start,end,GRange,max.inter,max.cl)
 rm(TAD_cl_inter_tbl)
 
-chromo<-"chr22"
+chromo<-"chr19"
 
 chr_TAD_best_cl_fit_tbl<-TAD_best_cl_fit_tbl %>% 
   filter(chr==chromo)
@@ -44,18 +65,13 @@ g_bpt<-as.igraph.Node(chr_bpt,directed = T,direction = 'climb')
 
 tmp_d<-distances(g_bpt,TAD_node,TAD_node)
 
-TAD_cl_combo<-t(combn(TAD_node,2)) 
-TAD_cl_combo_tbl<-TAD_cl_combo %>% 
-  as_tibble %>% 
-  mutate(bpt.dist=tmp_d[TAD_cl_combo])
-
-chr_TAD_best_cl_fit_tbl %>% 
+chr_TAD_best_cl_fit_tbl<-chr_TAD_best_cl_fit_tbl %>% 
   mutate(TAD.ID=paste(chr,start,end,sep="_"))
 
 
 tmp_res_set<-c("50kb","10kb","5kb")
 
-
+tmp_res<-"50kb"
 
 chr_dat<-compute_chr_res_zscore_fn(HiC_dat_folder,tmp_res,chromo,res_num)
 tmp_bins<-unique(c(chr_dat$X1,chr_dat$X2))
@@ -63,10 +79,14 @@ chr_bin_GRange<-GRanges(seqnames=chromo,
                         ranges = IRanges(start=tmp_bins,
                                          end=tmp_bins + res_num[tmp_res] -1
                         ))
+TAD_ID<-chr_TAD_best_cl_fit_tbl$TAD.ID
+top_TAD_GRangeL<-GRangesList(chr_TAD_best_cl_fit_tbl$GRange)
 
 bin_TAD_inter_tbl<-findOverlaps(top_TAD_GRangeL,chr_bin_GRange) %>% 
   as_tibble %>% 
   mutate(TAD.ID=TAD_ID[queryHits],bin=tmp_bins[subjectHits]) 
+
+
 intersect_size<-unlist(lapply(pintersect(top_TAD_GRangeL[bin_TAD_inter_tbl$queryHits],chr_bin_GRange[bin_TAD_inter_tbl$subjectHits]),width))
 
 bin_TAD_inter_tbl<-bin_TAD_inter_tbl %>% 
@@ -81,3 +101,44 @@ TAD_pair_combo<-t(combn(chr_TAD_bin_content$TAD.ID,2))
 
 inter_TAD_hic_dat<-chr_dat %>% 
   filter(X1 %in% unique(unlist(chr_TAD_bin_content$bin.content)) & X2 %in% unique(unlist(chr_TAD_bin_content$bin.content)))
+
+plan(multisession,workers=5)
+inter_TAD_hic_dat_l<-future_map(1:nrow(TAD_pair_combo),function(i){
+  
+  bins_a<-chr_TAD_bin_content %>% 
+    filter(TAD.ID==TAD_pair_combo[i,1]) %>% 
+    unnest(cols=c(bin.content)) %>% 
+    dplyr::select(bin.content) %>% unlist
+  
+  bins_b<-chr_TAD_bin_content %>% 
+    filter(TAD.ID==TAD_pair_combo[i,2]) %>% 
+    unnest(cols=c(bin.content)) %>% 
+    dplyr::select(bin.content) %>% unlist
+  
+  return(inter_TAD_hic_dat %>% 
+           filter(X1 %in% bins_a & X2 %in% bins_b | X1 %in% bins_b & X2 %in% bins_a) %>% 
+           dplyr::select(X1,X2,X3,zscore))
+  
+})
+plan(sequential)
+
+best_cl_vec<-chr_TAD_best_cl_fit_tbl$max.cl
+names(best_cl_vec)<-chr_TAD_best_cl_fit_tbl$TAD.ID
+TAD_cl_combo_tbl
+TAD_pair_combo_tbl<-TAD_pair_combo %>% 
+  as_tibble %>% 
+  mutate(cl.A=best_cl_vec[TAD_pair_combo[,1]],cl.B=best_cl_vec[TAD_pair_combo[,2]])
+TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>% 
+  mutate(bpt.d=tmp_d[as.matrix(TAD_pair_combo_tbl[,3:4])]) %>% 
+  mutate(med.z=unlist(lapply(inter_TAD_hic_dat_l,function(x)min(x$zscore))))
+
+
+TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>% 
+  mutate(bpt.d=tmp_d[as.matrix(TAD_pair_combo_tbl[,3:4])]) %>% 
+  mutate(med.z=inter_TAD_hic_dat_l)
+
+TAD_pair_combo_tbl %>% 
+  unnest(cols=c(med.z)) %>% 
+  ggplot(.,aes(bpt.d,zscore))+
+#  geom_point(alpha=0.01)+
+  geom_smooth()
