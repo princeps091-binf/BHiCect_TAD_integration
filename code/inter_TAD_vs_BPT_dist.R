@@ -133,12 +133,13 @@ TAD_pair_combo_tbl<-TAD_pair_combo %>%
   mutate(cl.A=best_cl_vec[TAD_pair_combo[,1]],cl.B=best_cl_vec[TAD_pair_combo[,2]])
 
 TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>% 
-  mutate(bpt.d=tmp_d[as.matrix(TAD_pair_combo_tbl[,3:4])]) %>% 
+  mutate(bpt.d=tmp_d[as.matrix(TAD_pair_combo_tbl[,3:4])])
+
+TAD_pair_combo_tbl<-TAD_pair_combo_tbl%>% 
   mutate(med.z=unlist(lapply(inter_TAD_hic_dat_l,function(x)min(x$zscore))))
 
 
 TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>% 
-  mutate(bpt.d=tmp_d[as.matrix(TAD_pair_combo_tbl[,3:4])]) %>% 
   mutate(med.z=inter_TAD_hic_dat_l)
 
 gg_tmp<-TAD_pair_combo_tbl %>% 
@@ -152,5 +153,24 @@ gg_tmp<-TAD_pair_combo_tbl %>%
   unnest(cols=c(med.z)) %>% 
   ggplot(.,aes(gdist,zscore))+
   #  geom_point(alpha=0.01)+
+  geom_smooth()
+
+#-------------------------------------------------
+# Stratify the various inter-TAD interactions based on corresponding cluster nestedness configuration
+# Can these different configuration display different relation between looping and nesting distance
+
+TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>%
+  mutate(nest=pmap_chr(list(cl.A,cl.B),function(cl.A,cl.B){
+    ifelse(cl.B %in% node_ancestor[[cl.A]] | cl.A %in% node_ancestor[[cl.B]],"nest","ex")
+  }))
+
+TAD_pair_combo_tbl %>% 
+  mutate(gdist=abs(((as.numeric(str_split_fixed(V1,"_",3)[,3])+as.numeric(str_split_fixed(V1,"_",3)[,2]))/2) - ((as.numeric(str_split_fixed(V2,"_",3)[,3])+as.numeric(str_split_fixed(V2,"_",3)[,2]))/2))) %>% 
+  mutate(med.z=inter_TAD_hic_dat_l) %>% 
+#  filter(cl.A != cl.B) %>% 
+  unnest(cols=c(med.z)) %>% 
+  ggplot(.,aes(bpt.d,gdist))+
+  geom_point(alpha=0.01)+
+  scale_y_log10()+
   geom_smooth()
 
