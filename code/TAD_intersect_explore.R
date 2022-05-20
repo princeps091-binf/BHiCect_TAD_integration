@@ -76,3 +76,23 @@ TAD_cl_inter_tbl %>%
 tmp_tad_stat.tbl %>% 
   ggplot(.,aes(inter.stat,color=io))+
   geom_density()
+
+
+tmp_tad<-TAD_cl_inter_tbl$GRange
+tmp_inter_cl_GRange<-TAD_cl_inter_tbl$inter.cl.GRange
+cl <- makeCluster(nworker)
+clusterEvalQ(cl, {
+  library(dplyr)
+  library(GenomicRanges)
+  print("node ready")
+})
+clusterExport(cl, c("tmp_tad", "tmp_inter_cl_GRange"))
+
+tmp_stat_l <- parLapply(cl, 1:length(tmp_tad), function(x) {
+  tmp_l<-GRangesList(lapply(1:length(tmp_inter_cl_GRange[[x]]),function(y)return(tmp_tad[[x]])))
+  tmp_inter_l<-GRangesList(tmp_inter_cl_GRange[[x]])
+  return(unlist(lapply(width(IRanges::intersect(tmp_l,tmp_inter_l)),sum))/unlist(width(tmp_l)))
+  
+})
+stopCluster(cl)
+rm(cl)
