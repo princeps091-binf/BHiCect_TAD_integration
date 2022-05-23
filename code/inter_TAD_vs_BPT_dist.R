@@ -144,7 +144,7 @@ for(chromo in chr_set){
   TAD_pair_combo_tbl<-TAD_pair_combo_tbl %>% 
     mutate(med.z=inter_TAD_hic_dat_l)
   
-  chre_res_l[[chromo]]<-TAD_pair_combo_tbl
+  chr_res_l[[chromo]]<-TAD_pair_combo_tbl
 }
 
 
