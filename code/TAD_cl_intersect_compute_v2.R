@@ -87,7 +87,7 @@ chr_res_tbl<-do.call(bind_rows,chr_res_l)
 #--------------------------------
 res_file<-"./data/TAD_cl_inter_GM12878_tbl_v2.Rda"
 chr_res_tbl<-get_tbl_in_fn(res_file)
-chr_res_tbl %>% 
+gg_tmp<-chr_res_tbl %>% 
   group_by(chr,cl) %>% 
   summarise(m=all(inter<1),TAD.inter=list(unique(TAD.ID)),n=n()) %>% 
   filter(m) %>% 
@@ -96,4 +96,6 @@ chr_res_tbl %>%
   group_by(n.TAD) %>% 
   summarise(n=n()) %>% 
   ggplot(.,aes(x="sub-TAD cluster",n,fill=n.TAD))+
-  geom_bar(stat="identity")
+  geom_bar(stat="identity")+
+  scale_fill_brewer(palette="Set1")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly58/img/GM12878_subTAD_bar.png",gg_tmp)
