@@ -147,6 +147,18 @@ for(chromo in chr_set){
   chr_res_l[[chromo]]<-TAD_pair_combo_tbl
 }
 
+chr_res_tbl<-do.call(bnd_rows,chr_res_l)
+chr_res_tbl<-chr_res_tbl %>% 
+  unnest(cols=c(med.z))
+gg_tmp<-chr_res_tbl %>% 
+  ggplot(.,aes(bpt.d,zscore))+
+  geom_smooth()
+
+gg_tmp<-chr_res_tbl %>% 
+  mutate(gdist=abs(((as.numeric(str_split_fixed(V1,"_",3)[,3])+as.numeric(str_split_fixed(V1,"_",3)[,2]))/2) - ((as.numeric(str_split_fixed(V2,"_",3)[,3])+as.numeric(str_split_fixed(V2,"_",3)[,2]))/2))) %>% 
+  ggplot(.,aes(gdist,zscore))+
+  #  geom_point(alpha=0.01)+
+  geom_smooth()
 
 #-------------------------------------------------------------------------
 chromo<-"chr22"
