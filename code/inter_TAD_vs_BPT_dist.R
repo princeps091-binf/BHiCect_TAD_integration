@@ -160,6 +160,13 @@ gg_tmp<-chr_res_tbl %>%
   #  geom_point(alpha=0.01)+
   geom_smooth()
 
+gg_tmp<-chr_res_tbl %>% 
+  distinct(V1,V2,bpt.d) %>% 
+  mutate(gdist=abs(((as.numeric(str_split_fixed(V1,"_",3)[,3])+as.numeric(str_split_fixed(V1,"_",3)[,2]))/2) - ((as.numeric(str_split_fixed(V2,"_",3)[,3])+as.numeric(str_split_fixed(V2,"_",3)[,2]))/2))) %>% 
+  ggplot(.,aes(gdist,bpt.d))+
+  geom_point(alpha=0.01)+
+  geom_smooth()
+
 #-------------------------------------------------------------------------
 chromo<-"chr22"
 
