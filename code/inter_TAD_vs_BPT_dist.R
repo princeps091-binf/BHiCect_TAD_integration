@@ -150,6 +150,8 @@ for(chromo in chr_set){
 chr_res_tbl<-do.call(bnd_rows,chr_res_l)
 chr_res_tbl<-chr_res_tbl %>% 
   unnest(cols=c(med.z))
+
+load("~/data_transfer/inter_TAD_hic_tbl.Rda")
 gg_tmp<-chr_res_tbl %>% 
   ggplot(.,aes(bpt.d,zscore))+
   geom_smooth()
