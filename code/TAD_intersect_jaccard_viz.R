@@ -16,7 +16,6 @@ tad_inter_hmec_tbl<-get_tbl_in_fn("~/data_transfer/HMEC_top_TAD_cl_intersect.Rda
 tad_inter_h1_tbl<-get_tbl_in_fn("~/data_transfer/H1_top_TAD_cl_intersect.Rda")
 tad_inter_gm12878_tbl<-get_tbl_in_fn("~/data_transfer/GM12878_top_TAD_cl_intersect.Rda")
 
-hmec_res_file<-"/"
 gm12878_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
 hmec_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
 h1_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/H1/Dekker/spec_res/"
