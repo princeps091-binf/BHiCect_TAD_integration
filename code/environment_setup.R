@@ -17,6 +17,6 @@ renv::install("optparse")
 renv::install("DiagrammeR")
 renv::install("bioc::GenomicRanges")
 renv::install("bioc::rtracklayer")
-
+renv::install("svglite")
 
 renv::snapshot()

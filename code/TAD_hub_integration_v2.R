@@ -2,6 +2,7 @@ library(GenomicRanges)
 library(tidyverse)
 library(vroom)
 library(furrr)
+library(svglite)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
 names(res_num)<-res_set
@@ -15,10 +16,10 @@ get_tbl_in_fn<-function(tmp_file){
   return(out_tbl)
 }
 #---------------------------------------------
-tad_file<-"~/Documents/multires_bhicect/data/H1/Dekker/TAD.txt"
+tad_file<-"~/Documents/multires_bhicect/data/HMEC/GSE63525_HMEC_Arrowhead_domainlist.txt"
 
-hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/trans_res/H1_union_trans_res_dagger_tbl.Rda"
-spec_res_file<-"~/Documents/multires_bhicect/data/H1/Dekker/spec_res/"
+hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/trans_res/HMEC_union_trans_res_dagger_tbl.Rda"
+spec_res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
 # Build GRange object for TADs and Clusters
 tad_tbl<-vroom(tad_file,col_select = c(1:3)) %>% 
   mutate(chr1=paste0("chr",chr1)) %>% 
@@ -90,15 +91,16 @@ res_tbl %>%
   group_by(cl.id) %>% 
   summarise(n=n()) %>% 
   ggplot(.,aes(n))+
-  geom_density()
-
+  theme_minimal()+
+  geom_histogram()
+ggsave("~/Documents/multires_bhicect/weeklies/weekly60/img/subTAD_mixing_hist.svg")
 res_tbl %>% 
   filter(cl.w>tad.w) %>% 
   mutate(n=inter.w/tad.w) %>% 
   ggplot(.,aes(n))+
-  geom_density()
-
-unique(res_tbl$TAD.id)
+  theme_minimal()+
+  geom_histogram()
+ggsave("~/Documents/multires_bhicect/weeklies/weekly60/img/fullTAD_content_hist.svg")
 
 tad_tbl %>% 
   mutate(ID=paste(chr,start,end,sep="_")) %>% 
@@ -106,5 +108,7 @@ tad_tbl %>%
   group_by(io) %>% 
   summarise(n=n()) %>% 
   ggplot(.,aes(x="TADs",n,fill=io))+
-  geom_bar(stat="identity",position="fill")
+  geom_bar(stat="identity",position="fill")+
+  scale_fill_brewer(palette="Set1")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly60/img/TAD_hub_io.svg")
 
