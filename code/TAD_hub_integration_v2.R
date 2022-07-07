@@ -86,6 +86,28 @@ for(chromo in chr_set){
 
 res_tbl<-do.call(bind_rows,res_l)
 
+hub_tbl %>% 
+  dplyr::select(chr,node) %>% 
+  dplyr::rename(cl.id=node) %>% 
+  left_join(.,res_tbl %>% 
+              distinct(chr,cl.id) %>% 
+              mutate(io="TAD")) %>% 
+  mutate(io=ifelse(is.na(io),"no TAD",io)) %>% 
+  group_by(io) %>% 
+  summarise(n=n()) %>% 
+  ggplot(.,aes(x="TADs",n,fill=io))+
+  geom_bar(stat="identity",position="fill")+
+  scale_fill_brewer(palette="Set1")
+
+res_tbl %>% 
+  mutate(big.small=ifelse(cl.w>tad.w,"bigger","smaller")) %>% 
+  group_by(big.small) %>% 
+  summarise(n=n()) %>% 
+  ggplot(.,aes("cluster",n,fill=big.small))+
+  theme_minimal()+
+  geom_bar(stat="identity",position="fill")+
+  scale_fill_brewer(palette="Set1")
+
 res_tbl %>% 
   filter(cl.w<tad.w) %>% 
   group_by(cl.id) %>% 
@@ -101,6 +123,17 @@ res_tbl %>%
   theme_minimal()+
   geom_histogram()
 ggsave("~/Documents/multires_bhicect/weeklies/weekly60/img/fullTAD_content_hist.svg")
+
+
+res_tbl %>% 
+  filter(cl.w>tad.w) %>% 
+  group_by(cl.id) %>% 
+  summarise(n=n()) %>% 
+  ggplot(.,aes(n))+
+  theme_minimal()+
+  geom_histogram(bins=100)+
+  scale_x_log10()
+
 
 tad_tbl %>% 
   mutate(ID=paste(chr,start,end,sep="_")) %>% 
