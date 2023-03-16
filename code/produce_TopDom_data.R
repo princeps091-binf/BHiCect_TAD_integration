@@ -11,7 +11,7 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   chr_dat<-vroom(paste0(dat_file,cl_res,"/",chromo,".txt"),delim = "\t",col_names = F,trim_ws = T,escape_double = F)
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%
            filter(!(is.na(X3)))%>%filter(X1!=X2))
-         }
+}
 
 full_f_mat<-function(cl_mat,res){
   
@@ -34,27 +34,21 @@ full_f_mat<-function(cl_mat,res){
   chr_mat<-sparseMatrix(i=cl_mat$ego_id,cl_mat$alter_id,x=cl_mat$X3,dimnames = list(bin_5kb,bin_5kb))
   return(chr_mat)
 }
-
+#-----------------------------------------
 HiC_data_folder<-"~/Documents/multires_bhicect/data/HMEC/"
-chromo<-"chr1"
 tmp_res<-"10kb" # resolution at which Rao-arrowhead detected their domains in original paper
-topdom_file<-paste0("./data/TopDom_data/HMEC/",chromo,"_topdom_data.tsv")
-chr_dat<-hic_dat_in(HiC_data_folder,tmp_res,chromo)
-
-tmp_count<-as.matrix(full_f_mat(chr_dat,res_num[tmp_res]))
-
-bin_tbl<-tibble(id=1:ncol(tmp_count),chr=chromo,from.coord=as.integer(colnames(tmp_count)),to.coord=as.integer(colnames(tmp_count))+res_num[tmp_res])
-dimnames(tmp_count)<-NULL
-
-out_mat<-cbind(as.matrix(bin_tbl[,-1]),tmp_count)
-write.table(out_mat,file = topdom_file,sep = "\t",quote = F,col.names = F,row.names = F)
-rm(tmp_count,out_mat)
-
-fit <- TopDom(topdom_file, window.size = 5L,debug=T)
-
-fit$bed %>% 
-  as_tibble %>% 
-  filter(name=="domain") %>% 
-  mutate(w=chromEnd-chromStart) %>% 
-  ggplot(.,aes(w))+
-  geom_density()
+chr_set<-str_split_fixed(list.files(paste0(HiC_data_folder,tmp_res,"/")),"\\.",2)[,1]
+for(chromo in chr_set){
+  message(chromo)
+  topdom_file<-paste0("./data/TopDom_data/HMEC/",chromo,"_topdom_data.tsv")
+  chr_dat<-hic_dat_in(HiC_data_folder,tmp_res,chromo)
+  
+  tmp_count<-as.matrix(full_f_mat(chr_dat,res_num[tmp_res]))
+  
+  bin_tbl<-tibble(id=1:ncol(tmp_count),chr=chromo,from.coord=as.integer(colnames(tmp_count)),to.coord=as.integer(colnames(tmp_count))+res_num[tmp_res])
+  dimnames(tmp_count)<-NULL
+  
+  out_mat<-cbind(as.matrix(bin_tbl[,-1]),tmp_count)
+  write.table(out_mat,file = topdom_file,sep = "\t",quote = F,col.names = F,row.names = F)
+  rm(tmp_count,out_mat,bin_tbl,chr_dat,topdom_file)
+}

@@ -50,7 +50,12 @@ TAD_best_cl_fit_tbl<-TAD_cl_inter_tbl %>%
   dplyr::select(chr,start,end,GRange,max.inter,max.cl)
 rm(TAD_cl_inter_tbl)
 
-tmp_res<-"50kb"
+min_TAD_size<-TAD_best_cl_fit_tbl %>% 
+  mutate(w=end-start) %>% 
+  summarise(m=min(w)) %>% 
+  unlist
+tmp_res<-names(which.max(res_num[which(res_num<=min_TAD_size)]))
+
 chr_set<-grep("^chr",str_split_fixed(list.files(res_file),"_",2)[,1],value=T)
 
 chr_res_l<-vector("list",length(chr_set))

@@ -18,6 +18,12 @@ renv::install("optparse")
 renv::install("DiagrammeR")
 renv::install("bioc::GenomicRanges")
 renv::install("bioc::rtracklayer")
+renv::install("bioc::SpectralTAD")
+renv::install("bioc::DelayedArray")
+renv::install("bioc::SummarizedExperiment")
+renv::install("bioc::Biostrings")
 renv::install("svglite")
+renv::install("bioinfo-lab/TADBD")
+
 
 renv::snapshot()

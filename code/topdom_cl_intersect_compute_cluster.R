@@ -18,31 +18,22 @@ get_tbl_in_fn<-function(tmp_file){
   return(out_tbl)
 }
 #--------------------------------
-#BHiCect_res_folder<-"~/Documents/multires_bhicect/data/GM12878/spec_res/"
-#TAD_file<-"~/Documents/multires_bhicect/data/GM12878/GSE63525_GM12878_primary+replicate_Arrowhead_domainlist.txt"
-
-BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
-#TAD_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/GSE63525_GM12878_primary+replicate_Arrowhead_domainlist.txt"
-TAD_file<-"~/data_transfer/candidate_trans_DAGGER_hub/TAD_tbl/GM12878_top_TAD_tbl.Rda"
+BHiCect_res_folder<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
+TAD_file<-"~/data_transfer/candidate_trans_DAGGER_hub/TAD_tbl/topdom/HMEC_topdom_tads.Rda"
 #--------------------------------
-
 TAD_cl_inter_tbl<-get_tbl_in_fn(TAD_file) %>%
-  mutate(TAD.ID=paste(chr,start,end,sep="_"))
+  mutate(TAD.ID=paste(chrom,chromStart,chromEnd,sep="_"))
 
-# TAD_cl_inter_tbl<-vroom(TAD_file,col_select = c(1,2,3)) %>% 
-#   mutate(chr=paste0("chr",chr1)) %>% 
-#   dplyr::rename(start=x1,end=x2) %>%
-#   mutate(TAD.ID=paste(chr,start,end,sep="_")) %>% 
-#   dplyr::select(TAD.ID,chr,start,end)
-
-tad_Grange<-   GRanges(seqnames=TAD_cl_inter_tbl$chr,
-                       ranges = IRanges(start=TAD_cl_inter_tbl$start,
-                                        end=TAD_cl_inter_tbl$end - 1
+tad_Grange<-   GRanges(seqnames=TAD_cl_inter_tbl$chrom,
+                       ranges = IRanges(start=TAD_cl_inter_tbl$chromStart,
+                                        end=TAD_cl_inter_tbl$chromEnd - 1
                        ))
 mcols(tad_Grange)<-tibble(TAD.ID=TAD_cl_inter_tbl$TAD.ID)
+
 chr_set<-str_split_fixed(grep("^chr",list.files(BHiCect_res_folder),value = T),"_",2)[,1]
 chr_res_l<-vector("list",length(chr_set))
 names(chr_res_l)<-chr_set
+
 for(chromo in chr_set){
   message(chromo)
   load(paste0(BHiCect_res_folder,chromo,"_spec_res.Rda"))
@@ -84,18 +75,3 @@ for(chromo in chr_set){
   chr_res_l[[chromo]]<-tmp_stat_tbl
 }
 chr_res_tbl<-do.call(bind_rows,chr_res_l)
-#--------------------------------
-res_file<-"./data/TAD_cl_inter_GM12878_tbl_v2.Rda"
-chr_res_tbl<-get_tbl_in_fn(res_file)
-gg_tmp<-chr_res_tbl %>% 
-  group_by(chr,cl) %>% 
-  summarise(m=all(inter<1),TAD.inter=list(unique(TAD.ID)),n=n()) %>% 
-  filter(m) %>% 
-  mutate(n.TAD=ifelse(n>1,"> 1 TAD","single TAD")) %>%
-  ungroup %>% 
-  group_by(n.TAD) %>% 
-  summarise(n=n()) %>% 
-  ggplot(.,aes(x="sub-TAD cluster",n,fill=n.TAD))+
-  geom_bar(stat="identity")+
-  scale_fill_brewer(palette="Set1")
-ggsave("~/Documents/multires_bhicect/weeklies/weekly58/img/GM12878_subTAD_bar.png",gg_tmp)
